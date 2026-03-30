@@ -281,17 +281,110 @@
     </div>
   </footer>
 
+  <!-- GSAP -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+
   <script>
-    // Mobile nav toggle
+    // ── Mobile nav toggle ──
     const toggle = document.getElementById('menuToggle');
     const links = document.getElementById('navLinks');
     toggle.addEventListener('click', () => links.classList.toggle('open'));
     links.querySelectorAll('a').forEach(a => a.addEventListener('click', () => links.classList.remove('open')));
-
-    // Close nav on outside click
     document.addEventListener('click', e => {
       if (!toggle.contains(e.target) && !links.contains(e.target)) links.classList.remove('open');
     });
+
+    // ── GSAP Animations ──
+    // Respect prefers-reduced-motion
+    const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (!prefersReduced) {
+      try {
+        gsap.registerPlugin(ScrollTrigger);
+
+        // ── Hero timeline (on load) ──
+        const heroTl = gsap.timeline({ defaults: { ease: 'power3.out' } });
+
+        heroTl
+          .from('.hero-bg-text', { opacity: 0, scale: 0.92, duration: 2, ease: 'power2.out' }, 0)
+          .from('#hero .section-label', { y: 24, opacity: 0, duration: 0.6 }, 0.2)
+          .from('#hero h1', { y: 48, opacity: 0, duration: 0.9 }, 0.4)
+          .from('#hero p', { y: 28, opacity: 0, duration: 0.7 }, 0.65)
+          .from('.btn-group .btn', { y: 20, opacity: 0, stagger: 0.12, duration: 0.55 }, 0.85)
+          .from('.hero-stats > div', { y: 20, opacity: 0, stagger: 0.1, duration: 0.5 }, 1.05);
+
+        // ── Stat counters ──
+        document.querySelectorAll('.stat-num').forEach(el => {
+          const raw = el.textContent.trim();
+          const num = parseFloat(raw);
+          if (isNaN(num)) return;
+          const suffix = raw.replace(String(num), '');
+          const obj = { val: 0 };
+          ScrollTrigger.create({
+            trigger: el,
+            start: 'top 85%',
+            once: true,
+            onEnter: () => gsap.to(obj, {
+              val: num,
+              duration: 1.4,
+              ease: 'power2.out',
+              onUpdate: () => { el.textContent = (suffix === '+' || suffix === '%') ? Math.round(obj.val) + suffix : Math.round(obj.val); }
+            })
+          });
+        });
+
+        // ── Scroll fade helper ──
+        function fadeUp(targets, options = {}) {
+          gsap.from(targets, {
+            y: options.y ?? 40,
+            opacity: 0,
+            duration: options.duration ?? 0.75,
+            stagger: options.stagger ?? 0,
+            ease: 'power3.out',
+            scrollTrigger: {
+              trigger: options.trigger ?? targets,
+              start: 'top 82%',
+              once: true
+            }
+          });
+        }
+
+        // ── About ──
+        gsap.from('.about-content', {
+          x: -50, opacity: 0, duration: 0.9, ease: 'power3.out',
+          scrollTrigger: { trigger: '#about', start: 'top 75%', once: true }
+        });
+        gsap.from('.about-visual', {
+          x: 50, opacity: 0, duration: 0.9, ease: 'power3.out',
+          scrollTrigger: { trigger: '#about', start: 'top 75%', once: true }
+        });
+        fadeUp('.pillar', { trigger: '.about-pillars', stagger: 0.15, y: 24 });
+
+        // ── Services ──
+        fadeUp('#services .section-header', { trigger: '#services .section-header' });
+        fadeUp('.service-card', {
+          trigger: '.services-grid',
+          stagger: 0.08,
+          y: 30,
+          duration: 0.6
+        });
+
+        // ── Contact ──
+        gsap.from('.contact-info', {
+          x: -40, opacity: 0, duration: 0.8, ease: 'power3.out',
+          scrollTrigger: { trigger: '#contact', start: 'top 78%', once: true }
+        });
+        gsap.from('.contact-form', {
+          x: 40, opacity: 0, duration: 0.8, ease: 'power3.out',
+          scrollTrigger: { trigger: '#contact', start: 'top 78%', once: true }
+        });
+        fadeUp('.contact-item', { trigger: '.contact-details', stagger: 0.12, y: 20 });
+
+      } catch (e) {
+        // Animation failure — site remains fully readable
+        console.warn('GSAP init failed:', e);
+      }
+    }
   </script>
 
 </body>
